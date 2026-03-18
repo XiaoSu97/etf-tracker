@@ -19,6 +19,11 @@ export interface IndexData {
   pePercentile: number;    // PE 百分位 (0-100)
   pbPercentile: number;    // PB 百分位
   updatedAt: string;       // 更新时间
+  open?: number;           // 今开
+  high?: number;           // 最高
+  low?: number;            // 最低
+  prevClose?: number;      // 昨收
+  volume?: number;         // 成交量
 }
 
 // 历史 PE 数据

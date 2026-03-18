@@ -27,39 +27,40 @@ export default function Home() {
     if (watchlist.length === 0) return;
 
     const fetchData = async () => {
-      const dataMap: Record<string, IndexData> = {};
-
-      for (const item of watchlist) {
-        try {
+      // 并行获取所有指数数据
+      const results = await Promise.allSettled(
+        watchlist.map(async (item) => {
           let data: IndexData | null = null;
-
           if (item.market === 'US') {
             data = await fetchIndexDataFromYahoo(item.code);
           } else {
             data = await fetchIndexDataFromEastMoney(item.code, item.market);
           }
+          if (!data) return null;
 
-          if (data) {
-            // 获取历史 PE 数据并计算百分位
-            const historicalPE = await fetchHistoricalPE(item.code);
-            if (historicalPE.length > 0) {
-              data.pePercentile = calculatePEPercentile(data.pe, historicalPE);
-              data.pbPercentile = calculatePBPercentile(data.pb, historicalPE);
-            }
-            dataMap[item.code] = data;
+          // 历史 PE 和价格数据并行获取
+          const historicalPE = await fetchHistoricalPE(item.code);
+          if (historicalPE.length > 0) {
+            data.pePercentile = calculatePEPercentile(data.pe, historicalPE);
+            data.pbPercentile = calculatePBPercentile(data.pb, historicalPE);
           }
-        } catch (error) {
-          console.error(`Failed to fetch data for ${item.code}:`, error);
-        }
-      }
+          return { code: item.code, data };
+        })
+      );
 
+      const dataMap: Record<string, IndexData> = {};
+      results.forEach((result) => {
+        if (result.status === 'fulfilled' && result.value) {
+          dataMap[result.value.code] = result.value.data;
+        }
+      });
       setIndexData(dataMap);
     };
 
     fetchData();
 
-    // 每 5 分钟刷新一次
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    // 每 60 秒刷新一次
+    const interval = setInterval(fetchData, 60 * 1000);
     return () => clearInterval(interval);
   }, [watchlist]);
 

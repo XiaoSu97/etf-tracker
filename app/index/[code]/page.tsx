@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { IndexData, HistoricalPE } from '@/types';
 import { fetchIndexDataFromEastMoney, fetchIndexDataFromYahoo, fetchHistoricalPE } from '@/lib/api';
 import { calculatePEPercentile, calculatePBPercentile, getPEStats, getValuationText } from '@/lib/pe-calculator';
-import ReactECharts from 'echarts-for-react';
+
+// echarts-for-react 依赖 window，必须关闭 SSR
+const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false });
 
 // 百分位进度条组件（仿 etf.run 风格）
 function PercentileBar({ value, percentile, label, min, max, avg, unit = '' }: {

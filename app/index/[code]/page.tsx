@@ -187,7 +187,7 @@ function PEHistoryChart({ data, currentPE }: { data: HistoricalPE[]; currentPE: 
 export default function IndexDetail() {
   const params = useParams();
   const router = useRouter();
-  const code = params.code as string;
+  const code = decodeURIComponent(params.code as string);
 
   const [data, setData] = useState<IndexData | null>(null);
   const [historicalPE, setHistoricalPE] = useState<HistoricalPE[]>([]);

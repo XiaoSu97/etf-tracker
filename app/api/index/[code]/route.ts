@@ -95,7 +95,7 @@ async function fetchFromTencent(code: string, market: string) {
     const open = parseFloat(fields[5]) || 0;
     const volume = parseFloat(fields[6]) || 0;
     const change = parseFloat(fields[31]) || (price - prevClose);
-    const changePercent = parseFloat(fields[32]) || ((price - prevClose) / prevClose * 100);
+    const changePercent = parseFloat(fields[32]) || (prevClose !== 0 ? (price - prevClose) / prevClose * 100 : 0);
     const high = parseFloat(fields[33]) || price;
     const low = parseFloat(fields[34]) || price;
     const pb = parseFloat(fields[38]) || 0;

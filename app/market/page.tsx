@@ -211,33 +211,42 @@ export default function MarketPage() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const results = await Promise.allSettled(
-        allIndices.map(async (idx) => {
-          let d: IndexData | null = null;
-          if (idx.market === 'US') {
-            d = await fetchIndexDataFromYahoo(idx.code);
-          } else {
-            d = await fetchIndexDataFromEastMoney(idx.code, idx.market);
-          }
-          if (!d) return { code: idx.code, data: null };
+      try {
+        const results = await Promise.allSettled(
+          allIndices.map(async (idx) => {
+            try {
+              let d: IndexData | null = null;
+              if (idx.market === 'US') {
+                d = await fetchIndexDataFromYahoo(idx.code);
+              } else {
+                d = await fetchIndexDataFromEastMoney(idx.code, idx.market);
+              }
+              if (!d) return { code: idx.code, data: null };
 
-          const hist = await fetchHistoricalPE(idx.code);
-          if (hist.length > 0) {
-            d.pePercentile = calculatePEPercentile(d.pe, hist);
-            d.pbPercentile = calculatePBPercentile(d.pb, hist);
-          }
-          return { code: idx.code, data: d };
-        })
-      );
+              const hist = await fetchHistoricalPE(idx.code);
+              if (hist.length > 0) {
+                d.pePercentile = calculatePEPercentile(d.pe, hist);
+                d.pbPercentile = calculatePBPercentile(d.pb, hist);
+              }
+              return { code: idx.code, data: d };
+            } catch (e) {
+              console.error(`获取 ${idx.code} 数据失败:`, e);
+              return { code: idx.code, data: null };
+            }
+          })
+        );
 
-      const map: Record<string, IndexData | null> = {};
-      results.forEach((r) => {
-        if (r.status === 'fulfilled' && r.value) {
-          map[r.value.code] = r.value.data;
-        }
-      });
-      setDataMap(map);
-      setLastUpdated(new Date());
+        const map: Record<string, IndexData | null> = {};
+        results.forEach((r) => {
+          if (r.status === 'fulfilled' && r.value) {
+            map[r.value.code] = r.value.data;
+          }
+        });
+        setDataMap(map);
+        setLastUpdated(new Date());
+      } catch (error) {
+        console.error('获取市场数据失败:', error);
+      }
     };
 
     fetchAll();

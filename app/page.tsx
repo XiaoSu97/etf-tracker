@@ -27,34 +27,43 @@ export default function Home() {
     if (watchlist.length === 0) return;
 
     const fetchData = async () => {
-      // 并行获取所有指数数据
-      const results = await Promise.allSettled(
-        watchlist.map(async (item) => {
-          let data: IndexData | null = null;
-          if (item.market === 'US') {
-            data = await fetchIndexDataFromYahoo(item.code);
-          } else {
-            data = await fetchIndexDataFromEastMoney(item.code, item.market);
-          }
-          if (!data) return null;
+      try {
+        // 并行获取所有指数数据
+        const results = await Promise.allSettled(
+          watchlist.map(async (item) => {
+            try {
+              let data: IndexData | null = null;
+              if (item.market === 'US') {
+                data = await fetchIndexDataFromYahoo(item.code);
+              } else {
+                data = await fetchIndexDataFromEastMoney(item.code, item.market);
+              }
+              if (!data) return null;
 
-          // 历史 PE 和价格数据并行获取
-          const historicalPE = await fetchHistoricalPE(item.code);
-          if (historicalPE.length > 0) {
-            data.pePercentile = calculatePEPercentile(data.pe, historicalPE);
-            data.pbPercentile = calculatePBPercentile(data.pb, historicalPE);
-          }
-          return { code: item.code, data };
-        })
-      );
+              // 历史 PE 和价格数据并行获取
+              const historicalPE = await fetchHistoricalPE(item.code);
+              if (historicalPE.length > 0) {
+                data.pePercentile = calculatePEPercentile(data.pe, historicalPE);
+                data.pbPercentile = calculatePBPercentile(data.pb, historicalPE);
+              }
+              return { code: item.code, data };
+            } catch (e) {
+              console.error(`获取 ${item.code} 数据失败:`, e);
+              return null;
+            }
+          })
+        );
 
-      const dataMap: Record<string, IndexData> = {};
-      results.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value) {
-          dataMap[result.value.code] = result.value.data;
-        }
-      });
-      setIndexData(dataMap);
+        const dataMap: Record<string, IndexData> = {};
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value) {
+            dataMap[result.value.code] = result.value.data;
+          }
+        });
+        setIndexData(dataMap);
+      } catch (error) {
+        console.error('获取自选数据失败:', error);
+      }
     };
 
     fetchData();

@@ -37,9 +37,13 @@ async function fetchFromTencent(code: string, market: string) {
     } else if (market === 'HK') {
       tencentCode = `hk${code}`;
     } else if (market === 'US') {
-      // 美股代码通常以 ^ 开头，腾讯 API 用 . 替代
-      const usCode = code.replace('^', '.');
-      tencentCode = `us${usCode}`;
+      // 美股代码映射：腾讯财经使用自定义代码
+      const US_CODE_MAP: Record<string, string> = {
+        '^DJI': 'us.DJI',
+        '^GSPC': 'us.INX',   // 标普500 在腾讯用 INX
+        '^IXIC': 'us.IXIC',
+      };
+      tencentCode = US_CODE_MAP[code] ?? `us.${code.replace('^', '')}`;
     }
 
     const url = `https://qt.gtimg.cn/q=${tencentCode}`;

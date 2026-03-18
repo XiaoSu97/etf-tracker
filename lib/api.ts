@@ -66,15 +66,16 @@ export async function fetchIndexDataFromYahoo(code: string): Promise<IndexData |
 }
 
 /**
- * 获取历史 PE 数据（从本地文件）
+ * 获取历史 PE 数据（通过 API 路由加载，避免动态 import 在生产环境报错）
  */
 export async function fetchHistoricalPE(code: string): Promise<HistoricalPE[]> {
   try {
-    // 在生产环境，从 /data/historical-pe 加载
-    const module = await import(`@/data/historical-pe/${code}.json`);
-    return module.data || [];
+    const response = await fetch(`/api/historical-pe/${code}`);
+    if (!response.ok) return [];
+    const json = await response.json();
+    return Array.isArray(json.data) ? json.data : [];
   } catch (error) {
-    console.warn(`No historical PE data for ${code}, returning empty array`);
+    console.warn(`No historical PE data for ${code}`);
     return [];
   }
 }

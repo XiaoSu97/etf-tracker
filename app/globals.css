@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 255, 255, 255;
+}
+
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 23, 42;
+  --background-end-rgb: 30, 41, 59;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+/* Tooltip 样式 */
+.tooltip {
+  @apply absolute z-50 px-3 py-2 text-sm bg-gray-900 text-white rounded-lg shadow-lg opacity-0 invisible transition-all duration-200;
+}
+
+.tooltip-show {
+  @apply opacity-100 visible;
+}
+
+/* 卡片悬停效果 */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer;
+}
+
+/* 估值颜色 */
+.valuation-low { @apply text-green-600; }
+.valuation-mid { @apply text-gray-600; }
+.valuation-high { @apply text-red-600; }

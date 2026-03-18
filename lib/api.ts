@@ -1,30 +1,54 @@
 import { IndexData, HistoricalPE, ComponentStock } from '@/types';
 
 /**
- * 获取指数代码的市场前缀
+ * 从 Next.js API 代理获取指数数据（避免 CORS 问题）
  */
-function getSecid(code: string, market: 'CN' | 'HK' | 'US'): string {
-  if (market === 'CN') {
-    // A 股：1. 开头
-    return `1.${code}`;
-  } else if (market === 'HK') {
-    // 港股：100. 开头
-    return `100.${code}`;
-  } else {
-    // 美股：特殊处理
-    return code;
+export async function fetchIndexDataFromProxy(
+  code: string,
+  market: 'CN' | 'HK' | 'US'
+): Promise<IndexData | null> {
+  try {
+    const url = `/api/index/${code}?market=${market}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('API Error:', data.error);
+      return null;
+    }
+    
+    return {
+      ...data,
+      pePercentile: 50, // 需要计算
+      pbPercentile: 50,
+    };
+  } catch (error) {
+    console.error('Failed to fetch index data:', error);
+    return null;
   }
 }
 
 /**
- * 从东方财富获取指数数据
+ * 从东方财富获取指数数据（备用）
  */
 export async function fetchIndexDataFromEastMoney(
   code: string,
   market: 'CN' | 'HK'
 ): Promise<IndexData | null> {
+  // 在生产环境使用 API 代理
+  if (process.env.NODE_ENV === 'production') {
+    return fetchIndexDataFromProxy(code, market);
+  }
+  
+  // 本地开发直接调用（可能有 CORS 问题）
   try {
-    const secid = getSecid(code, market);
+    const secid = market === 'CN' ? `1.${code}` : `100.${code}`;
     const fields = 'f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f53,f54,f55,f56,f57,f128,f129,f130,f131,f132,f133,f134,f135,f136,f137,f138,f139,f140,f141,f142,f143,f144,f145,f146,f147,f148,f149,f150';
     const url = `https://push2.eastmoney.com/api/qt/stock/get?secid=${secid}&fields=${fields}`;
     
@@ -42,7 +66,7 @@ export async function fetchIndexDataFromEastMoney(
       changePercent: data.f45 || 0,
       pe: data.f128 || 0,
       pb: data.f129 || 0,
-      pePercentile: 50, // 需要计算
+      pePercentile: 50,
       pbPercentile: 50,
       updatedAt: new Date().toISOString(),
     };
